@@ -1,25 +1,24 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { ReviewService } from '@/services/ReviewService.js';
+import type { ReviewInterface } from '@/interfaces/ReviewInterface.js';
 
 const props = defineProps<{
   bookId: number;
 }>();
 
-const reviews = computed(() => ReviewService.getReviewsByBookId(props.bookId));
-
+const reviews = ref<ReviewInterface[]>([]);
 const form = ref({
   rating: 5,
   comment: '',
   author: '',
 });
-
 const isSubmitting = ref(false);
 
-function submitReview() {
+async function submitReview() {
   if (!form.value.comment.trim()) return;
   isSubmitting.value = true;
-  ReviewService.createReview({
+  await ReviewService.createReview({
     bookId: props.bookId,
     rating: Math.min(5, Math.max(1, form.value.rating)),
     comment: form.value.comment.trim(),
@@ -27,6 +26,7 @@ function submitReview() {
   });
   form.value = { rating: 5, comment: '', author: '' };
   isSubmitting.value = false;
+  getReviews();
 }
 
 function formatDate(iso?: string): string {
@@ -37,13 +37,20 @@ function formatDate(iso?: string): string {
     day: 'numeric',
   });
 }
+
+async function getReviews() {
+  reviews.value = await ReviewService.getReviewsByBookId(props.bookId);
+}
+
+onMounted(() => {
+  getReviews();
+});
 </script>
 
 <template>
   <div class="space-y-6">
     <h3 class="text-lg font-semibold text-gray-800">Reviews</h3>
 
-    <!-- Create review form -->
     <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
       <h4 class="text-sm font-medium text-gray-700 mb-3">Add a review</h4>
       <form @submit.prevent="submitReview" class="space-y-3">
@@ -52,8 +59,7 @@ function formatDate(iso?: string): string {
           <select
             id="rating"
             v-model.number="form.rating"
-            class="w-full border border-gray-300 rounded py-2 px-3 focus:outline-none focus:ring focus:border-blue-300"
-            required
+            class="w-full border border-gray-300 rounded py-2 px-3 focus:outline-none focus:ring focus:border-blue-300" required
           >
             <option v-for="n in 5" :key="n" :value="n">{{ n }} star{{ n > 1 ? 's' : '' }}</option>
           </select>
@@ -89,7 +95,6 @@ function formatDate(iso?: string): string {
       </form>
     </div>
 
-    <!-- Review list -->
     <ul class="space-y-4">
       <li
         v-for="review in reviews"
