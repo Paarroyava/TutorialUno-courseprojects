@@ -9,7 +9,7 @@ const price = ref(0);
 const stock = ref(0);
 const successMessage = ref('');
 
-async function submitForm() {
+function submitForm() {
   const newBook: CreateBookDTO = {
     title: title.value,
     category: category.value,
@@ -17,16 +17,12 @@ async function submitForm() {
     stock: stock.value,
   };
 
-  try {
-    await BookService.createBook(newBook);
-    successMessage.value = 'Book created successfully!';
-    title.value = '';
-    category.value = '';
-    price.value = 0;
-    stock.value = 0;
-  } catch (error) {
-    console.error(error);
-  }
+  BookService.createBook(newBook);
+  successMessage.value = 'Book created successfully!';
+  title.value = '';
+  category.value = '';
+  price.value = 0;
+  stock.value = 0;
 }
 </script>
 
